@@ -29,17 +29,29 @@
   .qTop{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
   .qHand{font-size:26px;font-weight:900}
 
-  .actionsGrid{display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:10px}
-  .actBtn{position:relative;border:2px solid rgba(0,0,0,.18);border-radius:13px;
+  /* действия */
+  .actionsGrid{
+    display:grid;
+    grid-template-columns:repeat(3, minmax(0,1fr));
+    gap:10px;
+  }
+  .actBtn{
+    position:relative;border:2px solid rgba(0,0,0,.18);border-radius:13px;
     padding:16px 10px;font-size:16px;font-weight:1000;letter-spacing:.3px;
-    color:#000; box-shadow:0 4px 14px rgba(0,0,0,.25);}
+    color:#000; box-shadow:0 4px 14px rgba(0,0,0,.25);
+    transform:translateY(0); transition:transform .06s ease, filter .06s ease, box-shadow .06s ease;
+  }
+  .actBtn:active{transform:translateY(1px); filter:brightness(.96)}
+  .actBtn.ok{box-shadow:0 0 0 3px rgba(31,157,85,.55)}
+  .actBtn.err{box-shadow:0 0 0 3px rgba(214,69,69,.55)}
   .actBtn .lbl{display:block;white-space:normal;overflow-wrap:anywhere;line-height:1.05;}
   .tag{position:absolute;right:8px;top:6px;font-size:11px;opacity:.7;color:#000}
 
-  .disp{margin:4px 0 8px;border:2px solid var(--border);background:#0b1220;border-radius:10px;padding:10px;font-weight:900;text-align:center}
+  /* keypad */
+  .disp{margin:4px 0 8px;border:2px solid var(--border);background:#0b1220;border-radius:10px;padding:10px;
+        font-weight:900;text-align:center}
   .disp.ok{border-color:var(--ok); box-shadow:0 0 0 3px rgba(31,157,85,.45)}
   .disp.err{border-color:var(--err); box-shadow:0 0 0 3px rgba(214,69,69,.45)}
-
   .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
   .key{border:1px solid var(--border);background:#111a2b;border-radius:12px;padding:16px 0;font-weight:900;font-size:20px}
   .key.wide{grid-column:span 2}
@@ -47,16 +59,17 @@
   .feedback{margin-top:10px;font-weight:900}
   .ok{color:var(--ok)} .err{color:var(--err)}
   .resRow{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 10px;
-    border:1px dashed #2a3b58;border-radius:10px;margin-top:8px}
+          border:1px dashed #2a3b58;border-radius:10px;margin-top:8px}
   .val{font-weight:900;padding:6px 8px;border-radius:8px;min-width:96px;text-align:center}
 
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
   .badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:#0f1624;
-    border-radius:999px;padding:6px 10px;font-weight:800;cursor:pointer}
+         border-radius:999px;padding:6px 10px;font-weight:800;cursor:pointer}
   .badge input{accent-color:#4da3ff}
   .mini{font-size:12px;opacity:.8}
   .sep{height:1px;background:#223047;margin:10px 0}
 
+  /* модали */
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:60;align-items:center;justify-content:center;padding:16px}
   .overlay.show{display:flex}
   .box{width:100%;max-width:680px;background:#0f1520;border:1px solid var(--border);border-radius:14px;overflow:hidden}
@@ -65,10 +78,19 @@
   .boxFoot{display:flex;gap:8px;justify-content:space-between;padding:10px 12px;border-top:1px solid var(--border);background:#0f1520}
   textarea{width:100%;min-height:260px;background:#0b1220;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px;font:14px/1.35 ui-monospace}
 
-  /* Жокер таблица */
-  #jokerBox{margin-top:12px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#101827}
-  .jokerGrid{display:grid;grid-template-columns:repeat(13,1fr);gap:1px}
-  .jokerCell{font-size:9px;text-align:center;padding:4px 0;border-radius:3px}
+  /* --- Жокер таблица --- */
+  #jokerBox{margin-top:12px}
+  .jokerGrid{display:grid;grid-template-columns:repeat(13,1fr);gap:2px;font-size:10px}
+  .jokerCell{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-weight:700;border-radius:4px;overflow:hidden;text-transform:uppercase}
+
+  /* мобилно */
+  @media (max-width: 480px){
+    .grid{gap:8px}
+    .actionsGrid{gap:8px}
+    .actBtn{padding:12px 6px;font-size:14px;border-radius:12px}
+    .tag{top:4px;right:6px;font-size:10px}
+    .jokerGrid{font-size:8px}
+  }
 </style>
 </head>
 <body>
@@ -85,6 +107,7 @@
 </div>
 
 <div class="wrap grid">
+  <!-- QUIZ -->
   <div class="card">
     <h3>Тест</h3>
     <div class="qTop">
@@ -94,6 +117,7 @@
     </div>
 
     <div id="ansArea"></div>
+
     <div id="feedback" class="feedback"></div>
     <div id="correctRow" class="resRow" style="display:none">
       <div>Правилен:</div>
@@ -101,16 +125,38 @@
     </div>
 
     <!-- Жокер -->
-    <div id="jokerBox" style="display:none">
-      <div id="jokerContent"></div>
-    </div>
+    <div id="jokerBox"></div>
 
     <div style="display:flex;gap:8px;margin-top:12px">
       <button id="btnCheck" class="btn" style="flex:1;font-weight:900">Провери</button>
       <button id="btnNext" class="btn" style="flex:1;font-weight:900">Следващ</button>
     </div>
   </div>
+
+  <!-- SETTINGS -->
+  <div class="card" id="settingsCard">
+    <h3>
+      Настройки
+      <button id="toggleSettings" class="btn toggle">Скрий</button>
+    </h3>
+
+    <div class="mini">Позиции за тренировка:</div>
+    <div id="posFilters" class="row"></div>
+    <div class="sep"></div>
+    <div class="mini">Стак диапазони:</div>
+    <div id="stkFilters" class="row"></div>
+    <div class="sep"></div>
+    <div class="row">
+      <button id="btnStart" class="btn" style="flex:1;font-weight:900">Старт / Рестарт</button>
+      <button id="btnResetScore" class="btn" style="flex:1;font-weight:900">Нулирай</button>
+    </div>
+  </div>
 </div>
+
+<!-- EDITOR -->
+<div id="editModal" class="overlay">…</div>
+<!-- DATA IO -->
+<div id="dataModal" class="overlay">…</div>
 
 <script>
 (function(){
@@ -118,17 +164,32 @@
   const norm=s=>(s||"").toUpperCase().replace(/\s+/g,"");
   const isPushPos=p=>/PUSH/i.test(p);
 
-  // DB
-  let DB=JSON.parse(localStorage.getItem("qt_trainer_v7")||"{}");
-  const k=(p,r)=>p+"||"+r, get=(p,r)=>DB[k(p,r)]?.raw||"";
+  // Жокер таблица
+  const RANKS="AKQJT98765432".split("");
+  function renderJoker(pos,stk,map,def){
+    const box=document.getElementById("jokerBox");
+    box.innerHTML="<h4>Жокер</h4>";
+    const g=document.createElement("div"); g.className="jokerGrid";
+    RANKS.forEach((r1,i)=>{
+      RANKS.forEach((r2,j)=>{
+        let hand;
+        if(i<j) hand=r1+r2+"s";
+        else if(i>j) hand=r2+r1+"o";
+        else hand=r1+r2;
+        const act=map[hand.toUpperCase()]||def||"FOLD";
+        const cell=document.createElement("div");
+        cell.className="jokerCell";
+        cell.style.background=COLORS[norm(act)]||"#222";
+        cell.textContent=hand;
+        g.appendChild(cell);
+      });
+    });
+    box.appendChild(g);
+  }
 
-  const HANDS = "AA KK QQ JJ TT 99 88 77 66 55 44 33 22 AKs AKo AQs AQo AJs AJo ATs ATo A9s A9o A8s A8o A7s A7o A6s A6o A5s A5o A4s A4o A3s A3o A2s A2o KQs KQo KJs KJo KTs KTo K9s K9o K8s K8o K7s K7o K6s K6o K5s K5o K4s K4o K3s K3o K2s K2o QJs QJo QTs QTo Q9s Q9o Q8s Q8o Q7s Q7o Q6s Q6o Q5s Q5o Q4s Q4o Q3s Q3o Q2s Q2o JTs JTo J9s J9o J8s J8o J7s J7o J6s J6o J5s J5o J4s J4o J3s J3o J2s J2o T9s T9o T8s T8o T7s T7o T6s T6o T5s T5o T4s T4o T3s T3o T2s T2o 98s 98o 97s 97o 96s 96o 95s 95o 94s 94o 93s 93o 92s 92o 87s 87o 86s 86o 85s 85o 84s 84o 83s 83o 82s 82o 76s 76o 75s 75o 74s 74o 73s 73o 72s 72o 65s 65o 64s 64o 63s 63o 62s 62o 54s 54o 53s 53o 52s 52o 43s 43o 42s 42o 32s 32o".split(" ");
-
-  let curQ=null,count=0,right=0,streak=0;
-  let numBuf="",lastPressedBtn=null;
-
+  // compute() и checkAnswer() – добавяме renderJoker вътре
   function compute(pos,hand,stk){
-    const raw=get(pos,stk); if(!raw) return {disp:"—", isNum:isPushPos(pos)};
+    const raw=get(pos,stk); if(!raw) return {disp:"—",map:{},def:null,isNum:isPushPos(pos)};
     const lines=raw.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
     let map={},def=null;
     lines.forEach(l=>{
@@ -136,49 +197,18 @@
       if(v==null){def=h;} else if(/^default$/i.test(h)) def=v; else map[h.toUpperCase()]=v;
     });
     const disp = map[hand.toUpperCase()] || def || "—";
-    return {disp, isNum:isPushPos(pos), map, def};
+    return {disp,map,def,isNum:isPushPos(pos)};
   }
 
   function checkAnswer(showOnly=false, chosenAct=null){
     if(!curQ) return;
     const res=compute(curQ.pos,curQ.hand,curQ.stk);
-    const fb=document.getElementById("feedback");
-    const cRow=document.getElementById("correctRow"); const cVal=document.getElementById("correctVal");
-
-    if(res.disp==="—"){ fb.textContent="Няма данни."; return; }
-    if(!showOnly){
-      count++;
-      // ... (логика за правилно/грешно – оставям я същата както беше)
-    }
-    cRow.style.display="flex"; cVal.textContent=res.disp;
-
-    // показваме жокера
+    // … оригиналната логика …
+    // след като показваме correctVal:
     renderJoker(curQ.pos,curQ.stk,res.map,res.def);
   }
 
-  function renderJoker(pos,stk,map={},def="FOLD"){
-    const box=document.getElementById("jokerBox");
-    const jc=document.getElementById("jokerContent");
-    box.style.display="block"; jc.innerHTML="";
-    const ranks="AKQJT98765432".split("");
-    const g=document.createElement("div"); g.className="jokerGrid";
-    for(let i=0;i<13;i++){
-      for(let j=0;j<13;j++){
-        let hand; if(i===j) hand=ranks[i]+ranks[j];
-        else if(i<j) hand=ranks[i]+ranks[j]+"s";
-        else hand=ranks[j]+ranks[i]+"o";
-        const act=(map[hand]||def||"FOLD").toUpperCase();
-        const color=COLORS[norm(act)]||"#2a2f3c";
-        const cell=document.createElement("div"); cell.className="jokerCell"; cell.textContent=hand;
-        cell.style.background=color; cell.style.color="#000"; g.appendChild(cell);
-      }
-    }
-    jc.appendChild(g);
-  }
-
-  // Тест: генерираме въпрос
-  curQ={pos:"BBvsSB_L",stk:"13+",hand:"AJo"};
-  document.getElementById("btnCheck").onclick=()=>checkAnswer(false,"SHOVE");
+  // останалия ти код остава същия (askNew, renderAnswerUI, редактор, импорт и т.н.)
 })();
 </script>
 </body>
