@@ -15,7 +15,8 @@
   body{margin:0;background:var(--bg);color:var(--text);font:16px/1.35 -apple-system,system-ui,Segoe UI,Roboto,Arial}
   .top{position:sticky;top:0;z-index:30;display:flex;justify-content:space-between;align-items:center;
        padding:6px 8px;background:var(--panel2);border-bottom:1px solid var(--border)}
-  .chip{padding:3px 8px;border:1px solid var(--border);border-radius:999px;background:#0f1624;font-size:12px}
+  .chip{padding:3px 8px;border:1px solid var(--border);border-radius:999px;background:#0f1624;font-size:12px;display:inline-flex;gap:6px;align-items:center}
+  .chip b{display:inline-block;min-width:2.2ch;text-align:center;font-variant-numeric:tabular-nums}
   .btn{border:1px solid var(--border);background:#0f1624;color:var(--text);border-radius:12px;
        padding:10px 14px;font-weight:800;cursor:pointer}
   .wrap{max-width:1100px;margin:0 auto;padding:10px}
@@ -98,24 +99,38 @@
   #jokerPanel{display:none;margin-top:12px;border:1px dashed var(--border);border-radius:10px;padding:10px;background:#0f1624}
   #jokerHead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
   #jokerModeName{font-size:12px;opacity:.85}
-  /* Таблица 13x13 responsive, да запълва ширината без хор.скрол */
+  /* Таблица 13x13 responsive */
   .jokerGrid{display:grid;grid-template-columns:repeat(13,1fr);gap:1px}
   .jk{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-weight:800;border:1px solid #222;
-      font-size:11px;line-height:1}
+      font-size:11px;line-height:1;text-align:center;padding:0 2px}
+  .jk.cur{outline:3px solid #4da3ff; animation:pulseCur 1s ease-in-out 2}
+  @keyframes pulseCur{0%{outline-color:#4da3ff}50%{outline-color:#9cd0ff}100%{outline-color:#4da3ff}}
   @media(max-width:480px){ .jk{font-size:9px} }
   @media(max-width:380px){ .jk{font-size:8px} }
-  .jokerList{font-size:14px;line-height:1.4}
-  .jokerNote{font-size:13px;opacity:.9;font-style:italic}
+
+  /* Flash cards (чипове) */
+  .flashWrap{display:flex;flex-wrap:wrap;gap:6px}
+  .flashChip{border:1px solid rgba(0,0,0,.2);border-radius:10px;padding:6px 8px;font-weight:800}
+  .flashTitle{font-size:12px;opacity:.85;margin-bottom:6px}
+
+  /* Мнемоника */
+  .mnemoArea{width:100%;min-height:80px;background:#0b1220;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px;font:13px/1.35 ui-monospace}
+  .mnemoHint{font-size:11px;opacity:.7;margin-top:4px}
+
+  /* Клик по „Правилен:“ -> зелена анимация */
+  #correctVal.clickable{cursor:pointer}
+  @keyframes flashNext{0%{box-shadow:0 0 0 0 rgba(31,157,85,0)}40%{box-shadow:0 0 0 10px rgba(31,157,85,.35)}100%{box-shadow:0 0 0 0 rgba(31,157,85,0)}}
+  #correctVal.flashNext{animation:flashNext .55s ease}
 </style>
 </head>
 <body>
 <div class="top">
-  <div>
+  <div style="display:flex;gap:6px;align-items:center">
     <span class="chip">Q: <b id="qCount">0</b></span>
     <span class="chip">✔: <b id="qRight">0</b></span>
     <span class="chip">🔥: <b id="streak">0</b></span>
   </div>
-  <div>
+  <div style="display:flex;gap:8px">
     <button class="btn" id="btnEdit">Редактор</button>
     <button class="btn" id="btnData">Import/Export</button>
   </div>
@@ -525,7 +540,7 @@ T2o
   }
 
   // === ЖОКЕР: състояние и рендер ===
-  const JOKER_MODES = ["table","list","note"];
+  const JOKER_MODES = ["table","flash","note"];
   let jokerMode = localStorage.getItem("jokerMode") || "table";
   const btnJokerMode = document.getElementById("btnJokerMode");
   const jokerModeName = document.getElementById("jokerModeName");
@@ -542,9 +557,14 @@ T2o
 
   function labelForMode(m){
     if(m==="table") return "Жокер: Таблица 13×13";
-    if(m==="list")  return "Жокер: Списък по действия";
-    return "Жокер: Бележка";
+    if(m==="flash") return "Жокер: Flash Cards";
+    return "Жокер: Мнемоника";
   }
+
+  // Мнемоника – бележка per (pos,stk)
+  function getNoteKey(){ return "NOTE::"+(curQ?curQ.pos:"")+"||"+(curQ?curQ.stk:""); }
+  function loadNote(){ try{ return localStorage.getItem(getNoteKey()) || ""; }catch(e){ return ""; } }
+  function saveNote(v){ try{ localStorage.setItem(getNoteKey(), v||""); }catch(e){} }
 
   function renderJoker(){
     const panel=document.getElementById("jokerPanel");
@@ -554,7 +574,7 @@ T2o
     jokerContent.innerHTML="";
 
     if(jokerMode==="table"){
-      // Таблица 13×13 – оцветяване според действията
+      // Таблица 13×13 – оцветяване; в PUSH позиции — числа
       const grid=document.createElement("div");
       grid.className="jokerGrid";
       const ranks=["A","K","Q","J","T","9","8","7","6","5","4","3","2"];
@@ -568,8 +588,7 @@ T2o
           else h=ranks[j]+ranks[i]+"o";
           const r = compute(curQ.pos, h.toUpperCase(), curQ.stk);
           if(r.isNum){
-            // PUSH позиции – показваме числото, фон неутрален
-            cell.textContent = (r.disp==="—")?"":r.disp;
+            cell.textContent = (r.disp==="—")?"":r.disp; // число
             cell.style.background = "#1a2335";
             cell.style.color = "#fff";
           }else{
@@ -578,48 +597,92 @@ T2o
             cell.style.background = dd.color || "#2a2f3c";
             cell.style.color = "#000";
           }
+          if(h.toUpperCase()===curQ.hand.toUpperCase()){
+            cell.classList.add("cur");
+          }
           grid.appendChild(cell);
         }
       }
       jokerContent.appendChild(grid);
-    }else if(jokerMode==="list"){
-      // Списък по действие (групиране)
-      const mapByAct = {};
-      for(const h of HANDS){
-        const r = compute(curQ.pos, h.toUpperCase(), curQ.stk);
-        const act = r.disp || "—";
-        if(!mapByAct[act]) mapByAct[act]=[];
-        mapByAct[act].push(h);
-      }
+
+    }else if(jokerMode==="flash"){
+      // Flash Cards – сродни ръце със същото действие (или сходна цифра в PUSH)
       const wrap=document.createElement("div");
-      wrap.className="jokerList";
-      Object.keys(mapByAct).sort().forEach(act=>{
-        if(act==="—") return; // пропусни празните
-        const dd = resolveDisplay(curQ.pos, act);
-        const row=document.createElement("div");
-        row.innerHTML = `<b>${dd.text}</b>: ${mapByAct[act].join(", ")}`;
-        row.style.marginBottom="6px";
-        wrap.appendChild(row);
-      });
-      // Показваме ако има и празни/дефолтни
-      if(mapByAct["—"] && mapByAct["—"].length){
-        const row=document.createElement("div");
-        row.innerHTML = `<i>—</i>: ${mapByAct["—"].join(", ")}`;
-        wrap.appendChild(row);
+      const title=document.createElement("div");
+      title.className="flashTitle";
+      title.textContent="Сродни ръце със същото действие:";
+      wrap.appendChild(title);
+
+      const chips=document.createElement("div");
+      chips.className="flashWrap";
+
+      const curRes=compute(curQ.pos, curQ.hand.toUpperCase(), curQ.stk);
+      const target = curRes.disp; // действие или число
+      const isNum = curRes.isNum;
+
+      function parseHand(h){
+        const m = /^([AKQJT98765432])([AKQJT98765432])(s|o)?$/i.exec(h);
+        if(!m) return null;
+        const r1=m[1].toUpperCase(), r2=m[2].toUpperCase(), so=(m[3]||"").toLowerCase();
+        return {r1,r2, pair:r1===r2, suited:so==="s", off:so==="o"};
+      }
+      const ph = parseHand(curQ.hand);
+
+      function isSimilar(h){
+        const p=parseHand(h); if(!p||!ph) return false;
+        if(ph.pair) return p.pair;                 // всички чифтове
+        if(ph.suited) return p.suited && p.r1===ph.r1; // всички Axs, Kxs и т.н.
+        if(ph.off) return p.off && p.r1===ph.r1;       // всички Axo, Kxo и т.н.
+        // рядък случай: без s/o (напр. T9s.. но нашият списък е пълен) – fallback:
+        return (p.r1===ph.r1 && p.r2===ph.r2);
+      }
+
+      for(const h of HANDS){
+        if(!isSimilar(h)) continue;
+        const r=compute(curQ.pos, h.toUpperCase(), curQ.stk);
+        if(r.disp==="—") continue;
+        // Същото действие/число
+        if((!isNum && r.disp===target) || (isNum && Number(r.disp)===Number(target))){
+          const dd = resolveDisplay(curQ.pos, r.disp);
+          const chip=document.createElement("div");
+          chip.className="flashChip";
+          if(isNum){
+            chip.style.background="#1a2335"; chip.style.color="#fff";
+            chip.textContent = `${h} = ${r.disp}`;
+          }else{
+            chip.style.background=dd.color||"#2a2f3c"; chip.style.color="#000";
+            chip.textContent = h;
+          }
+          chips.appendChild(chip);
+        }
+      }
+      if(!chips.childNodes.length){
+        const none=document.createElement("div");
+        none.className="mini"; none.style.opacity=".8";
+        none.textContent="Няма други сходни ръце със същото действие.";
+        wrap.appendChild(none);
+      }else{
+        wrap.appendChild(chips);
       }
       jokerContent.appendChild(wrap);
+
     }else{
-      // Бележка – проста мнемоника (генерирана набързо от видимите действия)
-      const actsSeen = new Set();
-      for(const h of HANDS.slice(0,40)){ // нека е бързо
-        const r=compute(curQ.pos, h.toUpperCase(), curQ.stk);
-        if(r.disp!=="—") actsSeen.add(r.disp);
+      // Мнемоника – празно поле per (pos,stk)
+      const ta=document.createElement("textarea");
+      ta.className="mnemoArea";
+      ta.placeholder="Твоята мнемоника/подсказка за този спот (позиция + стак). Например: 'Всички Axs → SHOVE'.";
+      ta.value = loadNote();
+      ta.oninput=()=>saveNote(ta.value);
+      jokerContent.appendChild(ta);
+
+      const hint=document.createElement("div");
+      hint.className="mnemoHint";
+      if(isPushPos(curQ.pos)){
+        hint.textContent="PUSH спот – можеш да пишеш правила с числа (например 'Axo ≥ 9.5', 'Pairs ≥ 3.0').";
+      }else{
+        hint.textContent="Съвет: групирай на Pairs / Broadways / Axs / Kxs и им дай по едно действие.";
       }
-      const tip = document.createElement("div");
-      tip.className="jokerNote";
-      tip.textContent = `Бележка за ${curQ.pos} @ ${curQ.stk}: основни действия → ${Array.from(actsSeen).join(", ")}. 
-Опитай да групираш: Pairs/Broadways/Axs и ги вържи с действието.`;
-      jokerContent.appendChild(tip);
+      jokerContent.appendChild(hint);
     }
   }
 
@@ -635,8 +698,11 @@ T2o
       cRow.style.display="flex"; cVal.textContent="—"; cVal.style.background="#2a2f3c"; cVal.style.color="#fff";
       if(lastPressedBtn){ lastPressedBtn.classList.remove("ok","err"); }
       const d=document.getElementById("numDisp"); if(d){ d.classList.remove("ok","err"); }
-      // Покажи все пак жокера на базата на целия рейндж (ако има)
-      renderJoker(); return;
+      renderJoker();
+      // clickable next при липса на данни няма смисъл
+      cVal.classList.remove("clickable","flashNext");
+      cVal.onclick=null;
+      return;
     }
 
     if(!showOnly){
@@ -672,6 +738,16 @@ T2o
 
     // Показване на жокер (само след проверка)
     renderJoker();
+
+    // Клик по „Правилен:“ -> зелена анимация и следваща ръка
+    cVal.classList.add("clickable");
+    cVal.title = "Натисни за следваща ръка";
+    cVal.onclick = ()=>{
+      cVal.classList.remove("flashNext");
+      void cVal.offsetWidth; // reflow за рестарт на анимацията
+      cVal.classList.add("flashNext");
+      setTimeout(()=>{ askNew(); }, 300);
+    };
   }
 
   // Редактор
@@ -688,7 +764,7 @@ T2o
   }
   document.getElementById("btnEdit").onclick=openEditor;
   document.getElementById("editClose").onclick=()=>editModal.classList.remove("show");
-  // ⚠️ FIX: кирилско "к" → латинско k
+  // FIX: кирилско "к" -> латинско
   editPos.addEventListener("change",()=>{editArea.value=get(editPos.value,editStk.value)||""; document.getElementById("editMeta").textContent=`(${editPos.value} × ${editStk.value})`;});
   editStk.addEventListener("change",()=>{editArea.value=get(editPos.value,editStk.value)||""; document.getElementById("editMeta").textContent=`(${editPos.value} × ${editStk.value})`;});
   document.getElementById("editSave").onclick=()=>{ set(editPos.value, editStk.value, editArea.value); editModal.classList.remove("show"); };
@@ -722,9 +798,9 @@ T2o
     btn.textContent=hid?"Покажи":"Скрий";
   };
 
-  // Инициализация: покажи избраното име на режим; скрий панела до проверка
+  // Инициализация
   document.getElementById("jokerPanel").style.display="none";
-  document.getElementById("jokerModeName").textContent = labelForMode(jokerMode);
+  document.getElementById("jokerModeName").textContent = (function(m){ if(m==="table")return"Жокер: Таблица 13×13"; if(m==="flash")return"Жокер: Flash Cards"; return "Жокер: Мнемоника"; })(jokerMode);
 
 })();
 </script>
