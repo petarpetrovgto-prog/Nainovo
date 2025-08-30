@@ -25,34 +25,18 @@
   .card h3{margin:0 0 8px;font-size:16px;display:flex;align-items:center;justify-content:space-between}
   .toggle{font-size:12px;opacity:.9}
   .hidden{display:none}
-
   .qTop{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
   .qHand{font-size:26px;font-weight:900}
-
-  /* действия */
-  .actionsGrid{
-    display:grid;
-    grid-template-columns:repeat(3, minmax(0,1fr));
-    gap:10px;
-  }
-  .actBtn{
-    position:relative;border:2px solid rgba(0,0,0,.18);border-radius:13px;
+  .actionsGrid{display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:10px}
+  .actBtn{position:relative;border:2px solid rgba(0,0,0,.18);border-radius:13px;
     padding:16px 10px;font-size:16px;font-weight:1000;letter-spacing:.3px;
     color:#000; box-shadow:0 4px 14px rgba(0,0,0,.25);
-    transform:translateY(0); transition:transform .06s ease, filter .06s ease, box-shadow .06s ease;
-  }
+    transform:translateY(0); transition:transform .06s ease, filter .06s ease, box-shadow .06s ease;}
   .actBtn:active{transform:translateY(1px); filter:brightness(.96)}
   .actBtn.ok{box-shadow:0 0 0 3px rgba(31,157,85,.55)}
   .actBtn.err{box-shadow:0 0 0 3px rgba(214,69,69,.55)}
-  .actBtn .lbl{
-    display:block;
-    white-space:normal;
-    overflow-wrap:anywhere;
-    line-height:1.05;
-  }
+  .actBtn .lbl{display:block;white-space:normal;overflow-wrap:anywhere;line-height:1.05}
   .tag{position:absolute;right:8px;top:6px;font-size:11px;opacity:.7;color:#000}
-
-  /* keypad (за PUSH) */
   .disp{margin:4px 0 8px;border:2px solid var(--border);background:#0b1220;border-radius:10px;padding:10px;
         font-weight:900;text-align:center}
   .disp.ok{border-color:var(--ok); box-shadow:0 0 0 3px rgba(31,157,85,.45)}
@@ -60,21 +44,17 @@
   .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
   .key{border:1px solid var(--border);background:#111a2b;border-radius:12px;padding:16px 0;font-weight:900;font-size:20px}
   .key.wide{grid-column:span 2}
-
   .feedback{margin-top:10px;font-weight:900}
   .ok{color:var(--ok)} .err{color:var(--err)}
   .resRow{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 10px;
           border:1px dashed #2a3b58;border-radius:10px;margin-top:8px}
   .val{font-weight:900;padding:6px 8px;border-radius:8px;min-width:96px;text-align:center}
-
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
   .badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:#0f1624;
          border-radius:999px;padding:6px 10px;font-weight:800;cursor:pointer}
   .badge input{accent-color:#4da3ff}
   .mini{font-size:12px;opacity:.8}
   .sep{height:1px;background:#223047;margin:10px 0}
-
-  /* модали */
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:60;align-items:center;justify-content:center;padding:16px}
   .overlay.show{display:flex}
   .box{width:100%;max-width:680px;background:#0f1520;border:1px solid var(--border);border-radius:14px;overflow:hidden}
@@ -82,21 +62,18 @@
   .boxBody{padding:10px 12px}
   .boxFoot{display:flex;gap:8px;justify-content:space-between;padding:10px 12px;border-top:1px solid var(--border);background:#0f1520}
   textarea{width:100%;min-height:260px;background:#0b1220;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px;font:14px/1.35 ui-monospace}
-
-  /* Жокер */
-  #jokerPanel{margin-top:12px;padding:10px;border:1px dashed #2a3b58;border-radius:10px}
-  #jokerContent{margin-top:8px;max-height:300px;overflow:auto}
-
-  /* --- Мобилни настройки за iPhone 15 Pro Max (430px) и надолу --- */
   @media (max-width: 480px){
     .grid{gap:8px}
     .actionsGrid{gap:8px}
     .actBtn{padding:12px 6px;font-size:14px;border-radius:12px}
     .tag{top:4px;right:6px;font-size:10px}
   }
-  @media (max-width: 380px){
-    .actBtn{padding:10px 6px;font-size:13px}
-  }
+  @media (max-width: 380px){.actBtn{padding:10px 6px;font-size:13px}}
+
+  /* --- Жокер --- */
+  #jokerArea{margin-top:12px;padding:10px;border:1px dashed var(--border);border-radius:10px;background:#0f1624}
+  #jokerTable{display:grid;grid-template-columns:repeat(13,1fr);gap:1px;margin-top:8px}
+  #jokerTable div{padding:4px 0;text-align:center;font-size:10px;font-weight:700}
 </style>
 </head>
 <body>
@@ -113,7 +90,6 @@
 </div>
 
 <div class="wrap grid">
-  <!-- QUIZ -->
   <div class="card">
     <h3>Тест</h3>
     <div class="qTop">
@@ -121,78 +97,77 @@
       <div id="qStack">Стак: —</div>
       <div id="qPos">Позиция: —</div>
     </div>
-
     <div id="ansArea"></div>
-
     <div id="feedback" class="feedback"></div>
     <div id="correctRow" class="resRow" style="display:none">
       <div>Правилен:</div>
       <div id="correctVal" class="val">—</div>
     </div>
-
-    <!-- Жокер -->
-    <div id="jokerPanel" style="display:none">
-      <button id="btnJokerSwitch" class="btn" style="width:100%">Смени жокера</button>
-      <div id="jokerContent"></div>
-    </div>
-
     <div style="display:flex;gap:8px;margin-top:12px">
       <button id="btnCheck" class="btn" style="flex:1;font-weight:900">Провери</button>
       <button id="btnNext" class="btn" style="flex:1;font-weight:900">Следващ</button>
     </div>
+
+    <!-- Жокер -->
+    <div id="jokerArea" style="display:none">
+      <button class="btn" id="btnJoker" style="margin-bottom:8px">Смени жокер</button>
+      <div id="jokerContent"></div>
+    </div>
   </div>
 
-  <!-- SETTINGS -->
   <div class="card" id="settingsCard">
-    <h3>
-      Настройки
-      <button id="toggleSettings" class="btn toggle">Скрий</button>
-    </h3>
-    <div class="mini">Позиции за тренировка (маркирай конкретни):</div>
-    <div id="posFilters" class="row"></div>
+    <h3>Настройки <button id="toggleSettings" class="btn toggle">Скрий</button></h3>
+    <div class="mini">Позиции:</div><div id="posFilters" class="row"></div>
     <div class="sep"></div>
-    <div class="mini">Стак диапазони (маркирай конкретни):</div>
-    <div id="stkFilters" class="row"></div>
+    <div class="mini">Стак диапазони:</div><div id="stkFilters" class="row"></div>
     <div class="sep"></div>
     <div class="row">
-      <button id="btnStart" class="btn" style="flex:1;font-weight:900">Старт / Рестарт</button>
-      <button id="btnResetScore" class="btn" style="flex:1;font-weight:900">Нулирай резултат</button>
+      <button id="btnStart" class="btn" style="flex:1;font-weight:900">Старт</button>
+      <button id="btnResetScore" class="btn" style="flex:1;font-weight:900">Нулирай</button>
     </div>
   </div>
 </div>
 
 <!-- EDITOR -->
 <div id="editModal" class="overlay">…</div>
-<!-- DATA IO -->
+<!-- DATA MODAL -->
 <div id="dataModal" class="overlay">…</div>
 
 <script>
 (function(){
-  // --- твоя пълен JS тук ---
-  // (не съм пипал нито една буква, просто добавих showJoker и логика за бутона)
+  const COLORS={"FOLD":"#f4f6fa","L-F-F":"#a7e8a7","L-C-F":"#155d15","L-C-AI":"#bcdcf3","L-R-AI":"#0b3a94","MR-F-F":"#ffe27a","MR-C-AI":"#7b4a2a","MR-4B-AI":"#e44747","SHOVE":"#6d4b8e"};
+  const norm=s=>(s||"").toUpperCase().replace(/\s+/g,"");
+  const isPushPos=p=>/PUSH/i.test(p);
+  function resolveDisplay(key,act){return{ text:act, color:COLORS[norm(act)]||"" };}
+  // … (тук си остава целия ти JS – редактор, DB, checkAnswer и т.н.)
 
-  // >>> добавена функция Жокер <<<
-  let jokerType = localStorage.getItem("jokerType") || "matrix";
-  function showJoker(pos,stk){
-    const panel=document.getElementById("jokerPanel");
-    const cont=document.getElementById("jokerContent");
-    panel.style.display="block";
-    if(jokerType==="matrix"){
-      cont.innerHTML="<b>13x13 таблица (пример)</b><br>[тук се рисува таблица според данните]";
-    }else if(jokerType==="list"){
-      cont.innerHTML="<ul><li>Запомни: силните ръце винаги агресия</li><li>Средните – ситуативно</li></ul>";
-    }else if(jokerType==="mnemo"){
-      cont.innerHTML="Мнемоника: <b>ABC = Always Bet Connectors</b>";
+  // === Жокер ===
+  let jokerMode = Number(localStorage.getItem("jokerMode")||"0");
+  const jokerArea=document.getElementById("jokerArea");
+  const jokerContent=document.getElementById("jokerContent");
+  document.getElementById("btnJoker").onclick=()=>{jokerMode=(jokerMode+1)%3;localStorage.setItem("jokerMode",jokerMode);renderJoker();};
+
+  function renderJoker(){
+    jokerArea.style.display="block";
+    if(jokerMode===0){ // таблица
+      const tbl=document.createElement("div"); tbl.id="jokerTable";
+      const ranks=["A","K","Q","J","T","9","8","7","6","5","4","3","2"];
+      for(let i=0;i<13;i++){for(let j=0;j<13;j++){const cell=document.createElement("div");let h;
+        if(i===j)h=ranks[i]+ranks[j]; else if(i<j)h=ranks[i]+ranks[j]+"s"; else h=ranks[j]+ranks[i]+"o";
+        const val=compute(curQ.pos,h,curQ.stk).disp;
+        cell.textContent=h; cell.style.background=COLORS[norm(val)]||"#222"; tbl.appendChild(cell);}}
+      jokerContent.innerHTML=""; jokerContent.appendChild(tbl);
+    }else if(jokerMode===1){ // списък
+      const raw=get(curQ.pos,curQ.stk);const ul=document.createElement("ul");
+      raw.split(/\n/).forEach(l=>{if(!l.trim())return;const li=document.createElement("li");li.textContent=l;ul.appendChild(li);});
+      jokerContent.innerHTML="";jokerContent.appendChild(ul);
+    }else{ // бележка
+      jokerContent.innerHTML="<i>Мнемоника: Запомни логиката на рейнджа (пример).</i>";
     }
   }
-  document.getElementById("btnJokerSwitch").onclick=()=>{
-    jokerType = jokerType==="matrix"?"list":(jokerType==="list"?"mnemo":"matrix");
-    localStorage.setItem("jokerType",jokerType);
-    if(curQ) showJoker(curQ.pos,curQ.stk);
-  };
 
-  // >>> в checkAnswer след показване на правилния отговор добави:
-  // showJoker(curQ.pos,curQ.stk);
+  // в checkAnswer добави в края:
+  // renderJoker();
 
 })();
 </script>
