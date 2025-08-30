@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Range Trainer vT7 + Joker</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#0f1520; --panel2:#101827; --border:#223047; --text:#e7ecf3;
+    --FOLD:#f4f6fa; --L-F-F:#a7e8a7; --L-C-F:#155d15; --L-C-AI:#bcdcf3; --L-R-AI:#0b3a94;
+    --MR-F-F:#ffe27a; --MR-C-AI:#7b4a2a; --MR-4B-AI:#e44747; --SHOVE:#6d4b8e;
+    --ok:#1f9d55; --err:#d64545;
+  }
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.35 system-ui}
+  .top{position:sticky;top:0;z-index:30;display:flex;justify-content:space-between;align-items:center;
+       padding:6px 8px;background:var(--panel2);border-bottom:1px solid var(--border)}
+  .chip{padding:3px 8px;border:1px solid var(--border);border-radius:999px;background:#0f1624;font-size:12px}
+  .btn{border:1px solid var(--border);background:#0f1624;color:var(--text);border-radius:12px;
+       padding:8px 12px;font-weight:800;cursor:pointer;font-size:14px}
+  .wrap{max-width:1100px;margin:0 auto;padding:10px}
+  .grid{display:grid;gap:10px}
+  @media(min-width:980px){.grid{grid-template-columns:1.1fr 0.9fr}}
+  .card{border:1px solid var(--border);background:#0f1624;border-radius:14px;padding:12px}
+  .card h3{margin:0 0 8px;font-size:16px;display:flex;align-items:center;justify-content:space-between}
+
+  .qTop{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  .qHand{font-size:26px;font-weight:900}
+
+  .actionsGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .actBtn{position:relative;border:2px solid rgba(0,0,0,.18);border-radius:12px;
+          padding:14px 6px;font-size:14px;font-weight:900;color:#000;
+          box-shadow:0 4px 14px rgba(0,0,0,.25);}
+  .lbl{display:block;white-space:normal;overflow-wrap:anywhere;line-height:1.1}
+  .tag{position:absolute;right:6px;top:4px;font-size:10px;opacity:.7;color:#000}
+
+  .disp{margin:4px 0 8px;border:2px solid var(--border);background:#0b1220;border-radius:10px;padding:10px;font-weight:900;text-align:center}
+  .feedback{margin-top:10px;font-weight:900}
+  .ok{color:var(--ok)} .err{color:var(--err)}
+  .resRow{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 10px;
+          border:1px dashed #2a3b58;border-radius:10px;margin-top:8px}
+  .val{font-weight:900;padding:6px 8px;border-radius:8px;min-width:96px;text-align:center}
+
+  /* Жокери */
+  #jokerBox{margin-top:12px;padding:10px;border:1px solid var(--border);border-radius:12px;background:#101827}
+  #jokerContent{margin-top:6px;overflow-x:hidden}
+  .jokerGrid{display:grid;grid-template-columns:repeat(13,1fr);gap:1px}
+  .jokerCell{font-size:9px;text-align:center;padding:4px 0;border-radius:3px}
+  .jokerBar{height:18px;background:var(--border);border-radius:9px;overflow:hidden}
+  .jokerFill{height:100%;background:var(--ok);text-align:center;font-size:10px;font-weight:900;color:#000}
+</style>
+</head>
+<body>
+<div class="top">
+  <div>
+    <span class="chip">Q: <b id="qCount">0</b></span>
+    <span class="chip">✔: <b id="qRight">0</b></span>
+    <span class="chip">🔥: <b id="streak">0</b></span>
+  </div>
+  <div>
+    <button class="btn" id="btnEdit">Редактор</button>
+    <button class="btn" id="btnData">Import/Export</button>
+  </div>
+</div>
+
+<div class="wrap grid">
+  <!-- QUIZ -->
+  <div class="card">
+    <h3>Тест</h3>
+    <div class="qTop">
+      <div class="qHand" id="qHand">—</div>
+      <div id="qStack">Стак: —</div>
+      <div id="qPos">Позиция: —</div>
+    </div>
+
+    <div id="ansArea"></div>
+    <div id="feedback" class="feedback"></div>
+    <div id="correctRow" class="resRow" style="display:none">
+      <div>Правилен:</div>
+      <div id="correctVal" class="val">—</div>
+    </div>
+
+    <!-- Жокери -->
+    <div id="jokerBox" style="display:none">
+      <button class="btn" id="jokerSwitch">🔄 Смени жокера</button>
+      <div id="jokerContent"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button id="btnCheck" class="btn" style="flex:1;font-weight:900">Провери</button>
+      <button id="btnNext" class="btn" style="flex:1;font-weight:900">Следващ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const COLORS={"FOLD":"#f4f6fa","L-F-F":"#a7e8a7","L-C-F":"#155d15","L-C-AI":"#bcdcf3","L-R-AI":"#0b3a94","MR-F-F":"#ffe27a","MR-C-AI":"#7b4a2a","MR-4B-AI":"#e44747","SHOVE":"#6d4b8e"};
+  const norm=s=>(s||"").toUpperCase().replace(/\s+/g,"");
+
+  // DB (пример)
+  let DB=JSON.parse(localStorage.getItem("qt_trainer_v7")||"{}");
+  const get=(p,r)=>DB[p+"||"+r]?.raw||"";
+
+  // Joker state
+  let jokerMode=localStorage.getItem("jokerMode")||"grid";
+  document.getElementById("jokerSwitch").onclick=()=>{const order=["grid","summary","percent","rule"];jokerMode=order[(order.indexOf(jokerMode)+1)%order.length];localStorage.setItem("jokerMode",jokerMode);renderJoker(curQ.pos,curQ.stk);};
+
+  function renderJoker(pos,stk){
+    const box=document.getElementById("jokerBox"); box.style.display="block";
+    const jc=document.getElementById("jokerContent"); jc.innerHTML="";
+
+    const raw=get(pos,stk);
+    if(!raw){jc.textContent="Няма данни.";return;}
+
+    const lines=raw.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    let map={},def="FOLD";
+    lines.forEach(l=>{
+      const [h,v]=l.split("=").map(x=>x.trim());
+      if(/^default$/i.test(h)) def=v.toUpperCase();
+      else map[h.toUpperCase()]=v.toUpperCase();
+    });
+
+    if(jokerMode==="grid"){
+      const ranks="AKQJT98765432".split("");
+      const g=document.createElement("div");g.className="jokerGrid";
+      for(let i=0;i<13;i++){
+        for(let j=0;j<13;j++){
+          let hand;
+          if(i===j) hand=ranks[i]+ranks[j];
+          else if(i<j) hand=ranks[i]+ranks[j]+"s";
+          else hand=ranks[j]+ranks[i]+"o";
+          const act=map[hand]||def;
+          const color=COLORS[norm(act)]||"#2a2f3c";
+          const cell=document.createElement("div");cell.className="jokerCell";cell.textContent=hand;
+          cell.style.background=color; cell.style.color="#000";
+          g.appendChild(cell);
+        }
+      }
+      jc.appendChild(g);
+    }
+    else if(jokerMode==="summary"){
+      jc.textContent="Резюме: Всички pocket pairs, Ax, broadways → агресия. Малки боклуци → fold.";
+    }
+    else if(jokerMode==="percent"){
+      // примерно броим колко ръце не са Fold
+      const total=169; // уникални
+      const sel=Object.values(map).filter(v=>v!=="FOLD").length;
+      const pct=Math.round((sel/total)*100);
+      const wrap=document.createElement("div");wrap.className="jokerBar";
+      const fill=document.createElement("div");fill.className="jokerFill";fill.style.width=pct+"%";fill.textContent=pct+"%";
+      wrap.appendChild(fill);jc.appendChild(wrap);
+    }
+    else if(jokerMode==="rule"){
+      jc.textContent="Правило: Пушваме силните ръце и конектори, избягваме боклуци.";
+    }
+  }
+
+  // Тестов пример
+  let curQ={pos:"BBvsSB_L",stk:"13+",hand:"AJo"};
+  document.getElementById("btnCheck").onclick=()=>{document.getElementById("feedback").textContent="ВЯРНО!";renderJoker(curQ.pos,curQ.stk);};
+})();
+</script>
+</body>
+</html>
