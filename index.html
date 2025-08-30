@@ -132,7 +132,6 @@
   </div>
   <div style="display:flex;gap:8px">
     <button class="btn" id="btnEdit">Редактор</button>
-    <button class="btn" id="btnData">Import/Export</button>
   </div>
 </div>
 
@@ -211,23 +210,6 @@
     <div class="boxFoot">
       <button id="editClear" class="btn">Изчисти тази клетка</button>
       <div><button id="editSave" class="btn">Запази</button></div>
-    </div>
-  </div>
-</div>
-
-<!-- DATA IO -->
-<div id="dataModal" class="overlay">
-  <div class="box">
-    <div class="boxHead">
-      <div><b>Import / Export</b></div>
-      <button id="dataClose" class="btn">X</button>
-    </div>
-    <div class="boxBody">
-      <textarea id="dataArea" placeholder='{"HUSB||0–4":{"raw":"..."},"BBvsSB_L||13+":{"raw":"..."}}'></textarea>
-    </div>
-    <div class="boxFoot">
-      <button id="dataImport" class="btn">Импорт</button>
-      <button id="dataExport" class="btn">Експорт</button>
     </div>
   </div>
 </div>
@@ -633,7 +615,6 @@ T2o
         if(ph.pair) return p.pair;                 // всички чифтове
         if(ph.suited) return p.suited && p.r1===ph.r1; // всички Axs, Kxs и т.н.
         if(ph.off) return p.off && p.r1===ph.r1;       // всички Axo, Kxo и т.н.
-        // рядък случай: без s/o (напр. T9s.. но нашият списък е пълен) – fallback:
         return (p.r1===ph.r1 && p.r2===ph.r2);
       }
 
@@ -641,7 +622,6 @@ T2o
         if(!isSimilar(h)) continue;
         const r=compute(curQ.pos, h.toUpperCase(), curQ.stk);
         if(r.disp==="—") continue;
-        // Същото действие/число
         if((!isNum && r.disp===target) || (isNum && Number(r.disp)===Number(target))){
           const dd = resolveDisplay(curQ.pos, r.disp);
           const chip=document.createElement("div");
@@ -699,7 +679,6 @@ T2o
       if(lastPressedBtn){ lastPressedBtn.classList.remove("ok","err"); }
       const d=document.getElementById("numDisp"); if(d){ d.classList.remove("ok","err"); }
       renderJoker();
-      // clickable next при липса на данни няма смисъл
       cVal.classList.remove("clickable","flashNext");
       cVal.onclick=null;
       return;
@@ -714,7 +693,7 @@ T2o
         const d=document.getElementById("numDisp");
         if(d){ d.classList.toggle("ok",ok); d.classList.toggle("err",!ok); }
       }else{
-        ok = chosenAct!=null && chosenAct===res.disp; // сравняваме по RAW action
+        ok = chosenAct!=null && chosenAct===res.disp;
         if(lastPressedBtn){
           lastPressedBtn.classList.toggle("ok",ok);
           lastPressedBtn.classList.toggle("err",!ok);
@@ -764,19 +743,10 @@ T2o
   }
   document.getElementById("btnEdit").onclick=openEditor;
   document.getElementById("editClose").onclick=()=>editModal.classList.remove("show");
-  // FIX: кирилско "к" -> латинско
   editPos.addEventListener("change",()=>{editArea.value=get(editPos.value,editStk.value)||""; document.getElementById("editMeta").textContent=`(${editPos.value} × ${editStk.value})`;});
   editStk.addEventListener("change",()=>{editArea.value=get(editPos.value,editStk.value)||""; document.getElementById("editMeta").textContent=`(${editPos.value} × ${editStk.value})`;});
   document.getElementById("editSave").onclick=()=>{ set(editPos.value, editStk.value, editArea.value); editModal.classList.remove("show"); };
   document.getElementById("editClear").onclick=()=>{ if(confirm("Да изчистя тази клетка?")){ set(editPos.value, editStk.value, ""); editModal.classList.remove("show"); } };
-
-  // Data IO
-  const dataModal=document.getElementById("dataModal");
-  const dataArea=document.getElementById("dataArea");
-  document.getElementById("btnData").onclick=()=>{ dataArea.value=JSON.stringify(DB,null,2); dataModal.classList.add("show"); };
-  document.getElementById("dataClose").onclick=()=>dataModal.classList.remove("show");
-  document.getElementById("dataExport").onclick=()=>{ dataArea.value=JSON.stringify(DB,null,2); dataArea.focus(); dataArea.select(); };
-  document.getElementById("dataImport").onclick=()=>{ try{ const obj=JSON.parse(dataArea.value); DB=obj; save(); alert("Импорт успешно."); }catch(e){ alert("Невалиден JSON."); } };
 
   // Контроли
   document.getElementById("btnStart").onclick=()=>{count=right=streak=0;
